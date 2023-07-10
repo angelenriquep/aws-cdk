@@ -1,6 +1,6 @@
 import { Stack, StackProps, CfnOutput, Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { Cluster, Ec2Service, Ec2TaskDefinition, ContainerImage } from 'aws-cdk-lib/aws-ecs';
+import { Cluster, Ec2Service, Ec2TaskDefinition, ContainerImage, NetworkMode } from 'aws-cdk-lib/aws-ecs';
 import { Vpc, InstanceType, SubnetType } from 'aws-cdk-lib/aws-ec2';
 import {
   ApplicationLoadBalancer,
@@ -24,11 +24,11 @@ export class AwsCdkStack extends Stack {
           name: 'compute',
           subnetType: SubnetType.PRIVATE_WITH_NAT,
         },
-        {
-          cidrMask: 28,
-          name: 'rds',
-          subnetType: SubnetType.PRIVATE_ISOLATED,
-        },
+        // {
+        //   cidrMask: 28,
+        //   name: 'rds',
+        //   subnetType: SubnetType.PRIVATE_ISOLATED,
+        // },
       ],
     });
 
@@ -40,10 +40,13 @@ export class AwsCdkStack extends Stack {
 
     cluster.addCapacity('DefaultAutoScalingGroup', {
       instanceType: new InstanceType('t2.micro'),
+      desiredCapacity: 1,
     });
 
     // Create a task definition for your container
-    const taskDefinition = new Ec2TaskDefinition(this, 'MyTaskDef');
+    const taskDefinition = new Ec2TaskDefinition(this, 'MyTaskDef', {
+      networkMode: NetworkMode.AWS_VPC
+    });
 
     const container = taskDefinition.addContainer('MyContainer', {
       image: ContainerImage.fromRegistry('containous/whoami'),
@@ -60,6 +63,9 @@ export class AwsCdkStack extends Stack {
     const service = new Ec2Service(this, 'MyService', {
       cluster: cluster,
       taskDefinition: taskDefinition,
+      vpcSubnets: {
+        subnetType: SubnetType.PRIVATE_WITH_NAT,
+      },
     });
 
     const load_balancer = new ApplicationLoadBalancer(this, 'LB', {
@@ -96,5 +102,7 @@ export class AwsCdkStack extends Stack {
     new CfnOutput(this, 'BackendURL', {
       value: load_balancer.loadBalancerDnsName,
     });
+
+    // Cuantas instancias hace por defecto el cluster?
   }
 }
