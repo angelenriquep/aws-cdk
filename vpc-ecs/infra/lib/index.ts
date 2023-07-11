@@ -12,17 +12,18 @@ export class AwsCdkStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
+    // Helps wih networking
     const vpc = new Vpc(this, 'MyVpc', {
       subnetConfiguration: [
         {
           cidrMask: 24,
           name: 'ingress',
-          subnetType: SubnetType.PUBLIC,
+          subnetType: SubnetType.PUBLIC, // Defines a new subnet
         },
         {
           cidrMask: 24,
           name: 'compute',
-          subnetType: SubnetType.PRIVATE_WITH_NAT,
+          subnetType: SubnetType.PRIVATE_WITH_NAT, // Defines a new subnet
         },
         // {
         //   cidrMask: 28,
@@ -64,7 +65,7 @@ export class AwsCdkStack extends Stack {
       cluster: cluster,
       taskDefinition: taskDefinition,
       vpcSubnets: {
-        subnetType: SubnetType.PRIVATE_WITH_NAT,
+        subnetType: SubnetType.PRIVATE_WITH_NAT, // Do we really need NAT here?
       },
     });
 
