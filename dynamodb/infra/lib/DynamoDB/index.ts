@@ -1,9 +1,10 @@
-import { RemovalPolicy } from 'aws-cdk-lib';
+import { RemovalPolicy, Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as resources from 'aws-cdk-lib/custom-resources';
 import * as fs from 'fs';
 const path = require('path');
+import { Asset } from 'aws-cdk-lib/aws-s3-assets';
 
 interface Record {
   userId: string;
@@ -26,35 +27,45 @@ export class DynamoDB extends Construct {
       removalPolicy: RemovalPolicy.DESTROY
     });
 
-    // Add 25 items at a time ten times.
-    for (let i = 0; i < 10; i++) {
-      new resources.AwsCustomResource(this, `initDBResourceBatch${i}`, {
+    // Uploaded to Amazon S3 as-is
+    const fileAsset = new Asset(this, 'SampleSingleFileAsset', {
+      path: path.join(__dirname, 'input.jsonl')
+    });
+
+    let resource = null;
+
+    // Add 25 items at a time two times.
+    for (let i = 0; i < 2; i++) {
+      resource = new resources.AwsCustomResource(this, `initDBResourceBatch${i}`, {
         onCreate: {
           service: 'DynamoDB',
           action: 'batchWriteItem',
-          parameters: { RequestItems: { [this.tableName]: this.generateBatch() } },
+          parameters: { RequestItems: { [this.tableName]: this.generateBatch(25, fileAsset) } },
           physicalResourceId: resources.PhysicalResourceId.of(`initDBDataBatch${i}`),
         },
         policy: resources.AwsCustomResourcePolicy.fromSdkCalls({ resources: [this.table.tableArn] }),
+        timeout: Duration.minutes(10),
       });
     }
+
+    resource && resource.node.addDependency(fileAsset);
+    fileAsset.grantRead(resource)
+
   }
 
-  private generateBatch = (batchSize = 25): { PutRequest: { Item: Record } }[] => {
+  private generateBatch = (batchSize: number, fileAsset: Asset): { PutRequest: { Item: Record } }[] => {
     return new Array(batchSize).fill(undefined).map((_, index) => {
-      return { PutRequest: { Item: this.readJSONLFile(index) } };
+      return { PutRequest: { Item: this.readJSONLFile(index, fileAsset) } };
     });
   };
 
   // Consider use stream is the file is bigger to avoid exaust memory
-  private readJSONLFile(lineNumber: number): Record {
-    const fileContents = fs.readFileSync(path.join(__dirname, 'input.jsonl'), 'utf-8');
+  private readJSONLFile(lineNumber: number, fileAsset: Asset): Record {
+    const fileContents = fs.readFileSync(fileAsset.assetPath, 'utf-8');
     const lines = fileContents.split('\n');
-    
-    console.log(lines)
+
     const line = lines[lineNumber];
-    console.log(line, lineNumber)
-  
+
     const record = JSON.parse(line) as Record;
     return record;
   }
