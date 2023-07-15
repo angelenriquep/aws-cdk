@@ -16,3 +16,7 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 export AWS_PROFILE=cdk
 dk deploy --profile cdk
 dk destroy --profile cdk
+
+    // necesito una lambda para tener los resultados
+    // un api gateway para las rutas
+    // la apigateway dentro de vpc y con salida al exterior

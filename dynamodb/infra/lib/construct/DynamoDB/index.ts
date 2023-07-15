@@ -10,7 +10,7 @@ export class DynamoDB extends Construct {
     super(scope, id);
 
     this.table = new dynamodb.Table(scope, 'MainTable', {
-      partitionKey: { name: 'userID', type: dynamodb.AttributeType.STRING },
+      partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'ranking', type: dynamodb.AttributeType.NUMBER },
       tableName: this.tableName,
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
