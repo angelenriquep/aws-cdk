@@ -14,7 +14,7 @@ export class DynamoDB extends Construct {
       sortKey: { name: 'ranking', type: dynamodb.AttributeType.NUMBER },
       tableName: this.tableName,
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.DESTROY
+      removalPolicy: RemovalPolicy.DESTROY,
     });
   }
 }

@@ -5,10 +5,14 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 const path = require('path');
 import * as iam from 'aws-cdk-lib/aws-iam';
 
+interface Props {
+  tableName: string
+}
+
 export class LambdaLoader extends Construct {
   public readonly lambda: lambda.Function;
 
-  constructor(scope: Construct, id: string, props: any) {
+  constructor(scope: Construct, id: string, props: Props) {
     super(scope, id);
 
     // Uploaded to Amazon S3 as-is
